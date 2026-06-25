@@ -2,7 +2,7 @@
 name: ideation
 title: Creative Ideation — Constraint + Direction = Creativity
 description: "Route any blank-page problem to the right creative method."
-version: 2.2.0
+version: 2.2.1
 author: SHL0MS
 license: MIT
 platforms: [linux, macos, windows]
@@ -114,6 +114,8 @@ If the user's original request mentions "推"/"GitHub"/"开源"/"公开"/"PR"/"m
 - Does NOT modify any files. Read-only scan.
 
 **Relationship to other steps**: Step 4.6 runs AFTER Step 4.5 (self-audit) and BEFORE output delivery. It does NOT affect which method was chosen in Step 3 — safety is orthogonal to ideation quality.
+
+**Docs-only project exemption (v2.2.1)**: gh-push-safety-check v1.0.1 added a docs-only exemption — pure-docs projects (no `.py`/`.js`/`.ts`/`.go`/etc., only `.md`/`.yaml`/`.json`) get PASS under `--strict` mode if the only findings are `.gitignore`-related. This means creative-ideation v2.2.1 + gh-push-safety-check v1.0.1 don't over-block on skill repos and pure docs. **Code projects** still get FAIL as expected.
 
 **See also**: `overrides.md` Rule 9 for trigger word list and override interactions.
 
