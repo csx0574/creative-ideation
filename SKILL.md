@@ -2,7 +2,7 @@
 name: ideation
 title: Creative Ideation — Constraint + Direction = Creativity
 description: "Route any blank-page problem to the right creative method."
-version: 2.1.0
+version: 2.2.0
 author: SHL0MS
 license: MIT
 platforms: [linux, macos, windows]
@@ -83,6 +83,39 @@ After generating 3-5 ideas, run this checklist **before showing to the user**. I
 - [ ] **锚点多样性 (v2.1)**: Each idea's ≥3 anchors should include at least 1 "user/scene" anchor (specific person/place/scene/time/emotion), 1 "mechanism/engineering" anchor (specific tech/number/interface), 1 "anomaly/edge" anchor (violates best practice / unusual assumption). Prevents LLM from outputting all "engineering details" anchors.
 
 If any item fails → **discard output, rerun method with stricter filter**, do NOT deliver substandard output.
+
+### Step 4.6: Pre-Push Safety Check (v2.2 新增, 链式调 gh-push-safety-check)
+
+If the user's original request mentions "推"/"GitHub"/"开源"/"公开"/"PR"/"merge" (or any trigger word in `overrides.md` Rule 9), **chain to the `gh-push-safety-check` skill before delivering output**.
+
+**Why this exists**: 主公's 06-25 preference ("记住像这样推上去之前检查有没有敏感信息") — creative-ideation should never suggest pushing code without first verifying no secrets are about to leak.
+
+**Procedure**:
+
+1. **Detect trigger**: Scan user's request for keywords listed in `overrides.md` Rule 9.
+2. **If triggered**: Run the `gh-push-safety-check` skill in strict mode on the relevant code path:
+   ```bash
+   ~/.hermes/skills/gh-push-safety-check/scripts/gh-push-safety-check.sh <repo_path> --strict
+   ```
+3. **If exit 0 (PASS)**: Add ✅ line to output: `Safe to push: gh-push-safety-check returned exit 0`
+4. **If exit 1 (FAIL)**: Add ⚠️ block at TOP of output (before any idea):
+   ```
+   ⚠️ BLOCK PUSH: gh-push-safety-check found <N> critical findings.
+   Fix these BEFORE pushing — see ~/.hermes/skills/gh-push-safety-check/SKILL.md for the 6 categories.
+   Top findings:
+     - <file>:<line> — <category>: <match>
+   Ideas below are valid but DO NOT push until findings are resolved.
+   ```
+5. **If exit 2 (WARN even with --strict, which shouldn't happen)**: Treat as soft warning. Output ideas + add "manual review recommended" note.
+
+**What this does NOT do**:
+- Does NOT prevent delivery of ideas. The routing flow is about ideation, the safety check is about *execution*. Both are valuable, neither blocks the other.
+- Does NOT scan the user's home directory or unrelated repos. Only the repo path the user is about to push.
+- Does NOT modify any files. Read-only scan.
+
+**Relationship to other steps**: Step 4.6 runs AFTER Step 4.5 (self-audit) and BEFORE output delivery. It does NOT affect which method was chosen in Step 3 — safety is orthogonal to ideation quality.
+
+**See also**: `overrides.md` Rule 9 for trigger word list and override interactions.
 
 ## The Rule
 
@@ -305,3 +338,8 @@ v2.1 (2.1.0) — iteration on v2.0.1, validated against 3 real problems (HTML5 c
 5. **anti-slop.md Layer 5**: No hallucinated references. Specific products/companies/cases need at least 1 verifiable fact. Statistics must use hedging. Fixes Bug #2 (引用《大多数》手游"丑出了梗流量涨" as evidence without basis).
 6. **overrides.md Rule 8**: Default 怪倾向 for Stage 3/4/5 — Stage 6 Decision exempt.
 7. **methods/13-defamiliarization.md**: 5-Dimension Martian Template (action / time / space / energy / silence) — silence dimension captures "attention blank spots" (the gold mine for capture opportunities).
+
+v2.2 (2.2.0) — chains `gh-push-safety-check` skill into routing flow. Three additions:
+1. **overrides.md Rule 9**: Trigger words "推"/"GitHub"/"开源"/"PR" → append Step 4.6 to routing flow.
+2. **SKILL.md Step 4.6**: New step that runs `gh-push-safety-check --strict` when trigger detected. Adds ⚠️ BLOCK PUSH warning at top of output if FAIL, or ✅ Safe to push at bottom if PASS. Ideation and execution decoupled — ideas always delivered, safety check guards execution.
+3. **anti-slop.md Layer 6**: External guardrail — physical-layer filter (code path) complementing text-layer filters (idea text). Direct mechanism for 主公's 06-25 preference: "记住像这样推上去之前检查有没有敏感信息".

@@ -80,6 +80,32 @@
 
 怪诞预算审计规则见 anti-slop.md Layer 3 (v2.1 警告：装饰性怪诞不算怪诞)。
 
+## 9. 推送触发安全检查 (v2.2 新增, 链式调 gh-push-safety-check)
+
+如果用户原话含"推送"/"GitHub"/"开源"/"公开"/"PR"/"merge"等动词，**routing 流在 Step 4.5 之后追加 Step 4.6**：
+
+- 自动调 `gh-push-safety-check` skill（`~/.hermes/skills/gh-push-safety-check/`）
+- 默认 `--strict` 模式（WARN 也算 FAIL）
+- 输出格式：在 Routing 表的"Method chosen"后加一行 `Safety pre-check: REQUIRED → invoke gh-push-safety-check`
+- Safety 检查不通过 → idea 仍输出，但顶部加红色警告 ⚠️ `BLOCK PUSH: <count> critical findings`
+- Safety 检查通过 → 输出末尾加 ✅ `Safe to push`
+
+**触发词清单**:
+- "推" + "GitHub"/"github"/"仓库"/"repo" → 触发
+- "git push" / "gh repo create" / "gh pr create" → 触发
+- "开源" / "公开" / "publish" / "release" → 触发
+- "PR" / "merge" / "拉取请求" / "合并" → 触发
+- "发" + "链接"/"URL"/"仓库地址" → 触发
+
+**不触发**:
+- 单纯 "推" = 推算法/推理/思考（不涉及代码） → 不触发
+- "推到" + 主公/客户/团队（指通知/汇报） → 不触发
+- 想法阶段、纯文档项目 → 不触发
+
+**与其他 override 关系**:
+- 推送触发是 routing 流后置步骤，**不影响 method 选择**
+- 推送触发 + Override 7 (终极决策) 同时出现 → 决策给 verdict + safety-check 双流程
+
 ## 覆盖优先级
 
 当多个覆盖冲突时：

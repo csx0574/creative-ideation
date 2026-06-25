@@ -5,6 +5,21 @@ __pycache__/
 .venv/
 venv/
 
+# Secrets (defense in depth)
+.env
+.env.*
+*.key
+*.pem
+secrets.yaml
+secrets.yml
+credentials.json
+
+# Logs
+*.log
+
+# Node
+node_modules/
+
 # Editor
 .vscode/
 .idea/

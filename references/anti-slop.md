@@ -105,6 +105,24 @@ LLM 在"举例说明"时倾向于编造具体产品/数据/案例作为论据。
 
 **主公偏好**：诚实标注"假设"/"我不确定" > 编造权威细节。主公会在看到"我可能错了"时信任 agent，看到"绝对"时质疑 agent。
 
+## Layer 6: 推送前链式安全检查 (v2.2 新增)
+
+如果用户原话含"推"/"GitHub"/"开源"/"PR"等触发词（详见 `overrides.md` Rule 9），在 anti-slop 5 层跑完之后，**自动调 `gh-push-safety-check` skill** 验证要推的代码路径没敏感信息。
+
+**这是 anti-slop 体系的"外部护栏"**：Layer 1-5 是文本层过滤（idea 不能 slop），Layer 6 是物理层过滤（idea 落地的代码不能 leak）。
+
+**不替代 Layer 1-5**：Layer 6 只检查 *即将推送的代码*，不检查 *输出的 idea 文本*。两者正交。
+
+**通过条件**: `gh-push-safety-check --strict` 返回 exit 0 (PASS)。
+
+**失败处理**:
+- 顶部加 ⚠️ `BLOCK PUSH: <N> critical findings` 红色警告
+- idea 仍输出（ideation 与 execution 解耦）
+- 列出 top 5 findings 文件:行号 + 类别
+- 告诉用户去 `~/.hermes/skills/gh-push-safety-check/SKILL.md` 看 6 类说明
+
+**主公原话（06-25）**: "记住像这样推上去之前检查有没有敏感信息" — 这条 Layer 6 是直接落实这个偏好的机制化版本。
+
 ## 高套路领域黑名单
 
 下列话题，**自动启用拒绝前 5 个 + 强迫具体化**：
